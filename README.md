@@ -10,7 +10,10 @@ case.find_all_houses()
 df = case.df_
 ```
 
-It defaults to verbose, telling you what it finds or fails to find. Most likely, failing to find data depends on the data not being present in the page in the first place, even if I am aware that some data is still not being pulled and this is still a _work in progress_.
+It defaults to verbose, telling you what it finds or fails to find.
+
+Most likely, failing to find data depends on the data not being present in the page in the first place, even if I am aware that some data is still not being pulled and this is still a _work in progress_.
+
 An example output (scroll down to the bottom to see the resulting ```DataFrame```).
 
 ```
@@ -137,3 +140,4 @@ Can't get area info from url https://www.immobiliare.it/annunci/78871661/
 Energy efficiency still pending for https://www.immobiliare.it/annunci/78871661/ 
 Results stored in attribute 'df_'
 ```
+(https://github.com/Stemanz/immobiscraper/raw/master/img/Screenshot%202020-09-16%20at%2010.50.08.png)
