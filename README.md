@@ -140,4 +140,4 @@ Can't get area info from url https://www.immobiliare.it/annunci/78871661/
 Energy efficiency still pending for https://www.immobiliare.it/annunci/78871661/ 
 Results stored in attribute 'df_'
 ```
-(https://github.com/Stemanz/immobiscraper/raw/master/img/Screenshot%202020-09-16%20at%2010.50.08.png)
+![example dataframe](https://github.com/Stemanz/immobiscraper/raw/master/img/Screenshot%202020-09-16%20at%2010.50.08.png)
