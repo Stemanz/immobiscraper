@@ -1,3 +1,5 @@
+__version__ = "0.1.1"
+
 from io import BytesIO
 from bs4 import BeautifulSoup
 from collections import namedtuple
@@ -5,6 +7,7 @@ import requests
 import re
 import pandas as pd
 import numpy as np
+import time
 
 
 class Immobiliare():
@@ -13,12 +16,34 @@ class Immobiliare():
                  verbose=True,
                  min_house_cost=10_000, # threshold below which the house price
                                         # is assumed to be guessed wrong
-                 browse_all_pages=True, # keeps browsing all ads          
+                 browse_all_pages=True, # keeps browsing all ads
+                 
+                 area_not_found =0, # sets the default value if parameter is not found
+                 price_not_found=np.nan, # sets the default value if parameter is not found
+                 floor_not_found=0,  # sets the default value if parameter is not found
+                 car_not_found=0,  # sets the default value if parameter is not found
+                 energy_not_found="n/a", # sets the default value if parameter is not found
+                 invalid_price_per_area=0, # sets the default value if parameter is not found
+                 wait=100, # milliseconds wait for each website query
     ):
+        """ By default, if not found, only if the apartment price is not found
+        that is set to np.nan, so that all useless entries can be removed by DataFrame.dropna().
+        All other data is set to manageable entity so that the row is not dropped just because, for example,
+        energy information is not retrievable/available.
+        """
+        
         self.url = url
         self.verbose = verbose
         self.min_house_cost = min_house_cost #below, we pulled the wrong house price
         self.browse_all_pages = browse_all_pages
+        self.wait = wait/1000
+        
+        self.area_not_found  = area_not_found
+        self.price_not_found = price_not_found
+        self.floor_not_found = floor_not_found
+        self.car_not_found   = car_not_found
+        self.energy_not_found = energy_not_found
+        self.invalid_price_per_area = invalid_price_per_area
         
     def _say(self, *args, **kwargs):
         if self.verbose:
@@ -37,6 +62,7 @@ class Immobiliare():
         soup = BeautifulSoup(page, "html.parser")
         
         for link in soup.find_all("a"):
+            time.sleep(self.wait)
             l = link.get("href")
 
             if l is None:
@@ -99,7 +125,7 @@ class Immobiliare():
         page.seek(0)
         soup = BeautifulSoup(page, "html.parser")
         
-        text = soup.get_text()
+        text = soup.get_text() #?? OK on Mac, mayhem on Windows
         
         # compacting text
         t = text.replace("\n", "")
@@ -136,21 +162,21 @@ class Immobiliare():
         if cost is None:
             if "prezzo su richiesta" in t:
                 self._say(f"Price available upon request for {sub_url}")
-                cost = np.nan
+                cost = self.price_not_found
             else:
                 self._say(f"Can't get price for {sub_url}")
-                cost = np.nan
+                cost = self.price_not_found
         
-        if cost is not None and cost is not np.nan:
+        if cost is not None and cost is not self.price_not_found:
             # caso in cui ci siano le spese condominiali scambiate
             # per errore per costo della casa
             if int(cost) < self.min_house_cost:
                 if "prezzo su richiesta" in t:
                     self._say(f"Price available upon request for {sub_url}")
-                    cost = np.nan
+                    cost = self.price_not_found
                 else:
                     self._say(f"Too low house price: {int(cost)}? for {sub_url}")
-                    cost = np.nan
+                    cost = self.price_not_found
 
         
         # floor              ========== #
@@ -187,7 +213,7 @@ class Immobiliare():
             area = area_pattern.search(t)
             area = area.group(1)
         except AttributeError:
-            area = np.nan
+            area = self.area_not_found
             
             if "asta" in t:
                 self._say(f"Auction house: no area info {sub_url}")
@@ -230,10 +256,10 @@ class Immobiliare():
         if energy is None or not energy_acceptable(energy): # in case everything fails
             if "in attesa di certificazione" in t:
                 self._say(f"Energy efficiency still pending for {sub_url} ")
-                energy = np.nan
+                energy = self.energy_not_found
             else:
                 self._say(f"Can't get energy efficiency from {sub_url}")
-                energy = np.nan
+                energy = self.energy_not_found
                 
         
         # posto auto         ========== #
@@ -254,18 +280,44 @@ class Immobiliare():
                 available_upon_request = re.compile("possibilit\S.{0,10}auto")
                 if available_upon_request.search(t) is not None:
                     self._say(f"Car spot/box available upon request for {sub_url}")
-                    car = -1
+                    car = 0
                 else:
-                    car = np.nan
- 
+                    car = self.car_not_found
+        
+        
+        # €/m²                      ========== #
+        # ==================================== #
+        try:
+            price_per_area = round(int(cost) / int(area), 1)
+        except:
+            price_per_area = self.energy_not_found
+        
         
         # packing the results       ========== #
         # ==================================== #
         House = namedtuple(
-            "House", ["cost", "floor", "area", "ultimo", "url", "energy", "posto_auto"]
+            "House", [
+                "cost",
+                "price_per_area",
+                "floor",
+                "area",
+                "ultimo",
+                "url",
+                "energy",
+                "posto_auto"
+            ]
         )
         
-        res = House(cost, floor, area, ultimo, sub_url, energy, car)
+        res = House(
+            cost,
+            price_per_area,
+            floor,
+            area,
+            ultimo,
+            sub_url,
+            energy,
+            car
+        )
 
         return res
     
