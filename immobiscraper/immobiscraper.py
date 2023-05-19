@@ -224,8 +224,8 @@ class Immobiliare():
         # classe energetica  ========== #
         # ============================= #
         energy_patterns = (
-            "energetica (\w{1,2}) ",
-            "energetica(\w{1,2})",
+            "energetica ([a-z0-9+]{1,2}) ",
+            "energetica([a-z0-9+]{1,2})",
         )
         
         def energy_acceptable(stringlike):
