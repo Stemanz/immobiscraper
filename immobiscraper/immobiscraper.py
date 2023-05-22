@@ -1,4 +1,4 @@
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 from io import BytesIO
 from bs4 import BeautifulSoup
@@ -80,7 +80,7 @@ class Immobiliare():
 
                 t = self._get_text(curr_url).lower()
 
-                if "404 not found" in t:
+                if "404 not found" in t or "non è presente" in t:
                     self.urls_ = urls_
                     break
 
