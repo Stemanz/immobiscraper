@@ -126,7 +126,7 @@ class Immobiliare():
         soup = BeautifulSoup(page, "html.parser")
         
         text = soup.get_text() #?? OK on Mac, mayhem on Windows
-        
+
         # compacting text
         t = text.replace("\n", "")
         for _ in range(50): # that would be sufficient..
@@ -207,7 +207,7 @@ class Immobiliare():
         
         # square meters      ========== #
         # ============================= #
-        area_pattern = re.compile("superficie (\d{1,4}) m")
+        area_pattern = re.compile("superficie(\d{1,4}) m")
         
         try:
             area = area_pattern.search(t)
@@ -219,13 +219,13 @@ class Immobiliare():
                 self._say(f"Auction house: no area info {sub_url}")
             else:
                 self._say(f"Can't get area info from url {sub_url}")
-                
-        
+
+
         # classe energetica  ========== #
         # ============================= #
         energy_patterns = (
-            "energetica (\D{1,2}) ",
-            "energetica(\S{1,2})",
+            "energetica ([a-z0-9+]{1,2}) ",
+            "energetica([a-z0-9+]{1,2})",
         )
         
         def energy_acceptable(stringlike):
@@ -241,18 +241,18 @@ class Immobiliare():
                         return False
                     else:
                         return True
-        
+
         for i, pattern in enumerate(energy_patterns):
             energy_pattern = re.compile(pattern)
-            energy = energy_pattern.search(t)
-            
-            if energy is not None:             
-                energy = energy.group(1).upper()
+            matches = energy_pattern.findall(t)
+
+            if matches is not None and len(matches) > 0:
+                energy = matches[-1].upper()
                 #print(f"**debug pattern {i}")
                 #print(f"**debug match   {energy}")
                 if energy_acceptable(energy):
                         break
-        
+
         if energy is None or not energy_acceptable(energy): # in case everything fails
             if "in attesa di certificazione" in t:
                 self._say(f"Energy efficiency still pending for {sub_url} ")
